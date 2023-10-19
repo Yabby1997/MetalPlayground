@@ -1,0 +1,47 @@
+name: MetalPlayground
+
+options:
+  xcodeVersion: 14.3
+  deploymentTarget:
+    iOS: 15.0
+
+settings:
+  MARKETING_VERSION: 1.0.0
+  CURRENT_PROJECT_VERSION: 1
+
+targets:
+  MetalPlayground:
+    type: application
+    platform: iOS
+    sources:
+      - path: MetalPlayground
+        excludes: [Info.plist]
+    info:
+      path: MetalPlayground/Info.plist
+      properties:
+        CFBundleName: $(PRODUCT_NAME)
+        CFBundleIdentifier: $(PRODUCT_BUNDLE_IDENTIFIER)
+        CFBundleInfoDictionaryVersion: "6.0"
+        UISupportedInterfaceOrientations~iphone: [UIInterfaceOrientationPortrait, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
+        UISupportedInterfaceOrientations~ipad: [UIInterfaceOrientationPortrait, UIInterfaceOrientationPortraitUpsideDown, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        UIApplicationSupportsIndirectInputEvents: YES
+        UILaunchStoryboardName: LaunchScreen
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: YES
+          UISceneConfigurations:
+            UIWindowSceneSessionRoleApplication: [
+                {
+                    UISceneDelegateClassName: $(PRODUCT_MODULE_NAME).SceneDelegate,
+                    UISceneConfigurationName: Default Configuration
+                }
+            ]
+        LSRequiresIPhoneOS: YES
+        CFBundleExecutable: $(EXECUTABLE_NAME)
+        CFBundlePackageType: $(PRODUCT_BUNDLE_PACKIAGE_TYPE)
+        CFBundleDevelopmentRegion: $(DEVELOPMENT_LANGUAGE)
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+    settings:
+        DEVELOPMENT_TEAM: 5HZQ3M82FA
+        INFOPLIST_FILE: MetalPlayground/Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.seunghun.MetalPlayground
