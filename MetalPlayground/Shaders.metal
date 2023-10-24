@@ -16,10 +16,12 @@ struct VertexOut {
 vertex VertexOut basic_vertex(const device float4* verticies [[ buffer(0) ]],
                               constant float4x4& translation [[ buffer(1) ]],
                               constant float4x4& scale [[ buffer(2) ]],
+                              constant float2& textureInset [[ buffer(3) ]],
                               uint vertexIndex [[ vertex_id ]]) {
     VertexOut out;
-    out.position = scale * translation * verticies[vertexIndex];
-    out.texturePosition = float2((vertexIndex % 2), (vertexIndex / 2));
+    out.position = translation * scale * verticies[vertexIndex];
+    out.texturePosition = float2((vertexIndex % 2) + (vertexIndex % 2 == 0 ? textureInset[0] : -textureInset[0]),
+                                 (vertexIndex / 2) + (vertexIndex / 2 == 0 ? textureInset[1] : -textureInset[1]));
     return out;
 }
 

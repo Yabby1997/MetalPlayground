@@ -250,6 +250,25 @@ class ViewController: UIViewController {
             options: []
         )
 
+        let screenWidth = Float(metalLayer.drawableSize.width)
+        let screenHeight = Float(metalLayer.drawableSize.height)
+        let imageWidth = Float(backgroundCGImage.width)
+        let imageHeight = Float(backgroundCGImage.height)
+        let xInset = (imageWidth - ((imageHeight / screenHeight) * screenWidth)) / (2.0 * imageWidth)
+        let backgroundInset: [Float] = [xInset, .zero]
+        let backgroundInsetBuffer = device.makeBuffer(
+            bytes: backgroundInset,
+            length: backgroundInset.count * MemoryLayout.size(ofValue: backgroundInset[0]),
+            options: []
+        )
+
+        let zeroInset: [Float] = [.zero, .zero]
+        let zeroInsetBuffer = device.makeBuffer(
+            bytes: zeroInset,
+            length: zeroInset.count * MemoryLayout.size(ofValue: zeroInset[0]),
+            options: []
+        )
+
         let commandBuffer = commandQueue.makeCommandBuffer()!
         let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor)!
         renderEncoder.setRenderPipelineState(pipelineState)
@@ -257,10 +276,12 @@ class ViewController: UIViewController {
         renderEncoder.setFragmentTexture(backgroundTexture, index: 0)
         renderEncoder.setVertexBuffer(identityBuffer, offset: 0, index: 1)
         renderEncoder.setVertexBuffer(identityBuffer, offset: 0, index: 2)
+        renderEncoder.setVertexBuffer(backgroundInsetBuffer, offset: 0, index: 3)
         renderEncoder.drawPrimitives(type: .triangleStrip, vertexStart: 0, vertexCount: 4, instanceCount: 1)
         renderEncoder.setVertexBuffer(vertexBuffer, offset: 0, index: 0)
         renderEncoder.setVertexBuffer(translationBuffer, offset: 0, index: 1)
         renderEncoder.setVertexBuffer(scaleBuffer, offset: 0, index: 2)
+        renderEncoder.setVertexBuffer(zeroInsetBuffer, offset: 0, index: 3)
         renderEncoder.setFragmentTexture(texture, index: 0)
         renderEncoder.drawPrimitives(type: .triangleStrip, vertexStart: 0, vertexCount: 4, instanceCount: 1)
         renderEncoder.endEncoding()
