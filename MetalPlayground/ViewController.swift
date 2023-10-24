@@ -69,6 +69,24 @@ class ViewController: UIViewController {
         return segmentedControl
     }()
 
+    var backgroundVertexData: [Float] {
+        [
+            -1.0, 1.0, 0.0, 1.0,
+             1.0, 1.0, 0.0, 1.0,
+             -1.0, -1.0, 0.0, 1.0,
+             1.0, -1.0, 0.0, 1.0
+         ]
+    }
+
+    var identity: [Float] {
+        [
+            1, 0, 0, 0,
+            0, 1, 0, 0,
+            0, 0, 1, 0,
+            0, 0, 0, 1
+        ]
+    }
+
     var imageName = "lenna"
 
     var normalizedX: Float = .zero
@@ -172,12 +190,11 @@ class ViewController: UIViewController {
         let renderPassDescriptor = MTLRenderPassDescriptor()
         renderPassDescriptor.colorAttachments[0].texture = drawable.texture
         renderPassDescriptor.colorAttachments[0].loadAction = .clear
-        renderPassDescriptor.colorAttachments[0].clearColor = MTLClearColor(
-          red: 0.0,
-          green: 104.0/255.0,
-          blue: 55.0/255.0,
-          alpha: 1.0
-        )
+
+        guard let backgroundImage = UIImage(named: "background"),
+              let backgroundCGImage = backgroundImage.cgImage else {
+            fatalError("Failed to get image")
+        }
 
         guard let image = UIImage(named: imageName),
               let cgImage = image.cgImage else {
@@ -188,12 +205,32 @@ class ViewController: UIViewController {
         normalizedY = Float(cgImage.height) / Float(metalLayer.drawableSize.height)
 
         let textureLoader = MTKTextureLoader(device: device)
+
+        guard let backgroundTexture = try? textureLoader.newTexture(
+            cgImage: backgroundCGImage,
+            options: [.SRGB : false]
+        ) else {
+            fatalError("Failed to create texture from image")
+        }
+
         guard let texture = try? textureLoader.newTexture(
             cgImage: cgImage,
             options: [.SRGB : false]
         ) else {
             fatalError("Failed to create texture from image")
         }
+
+        let backgroundVertexBuffer = device.makeBuffer(
+            bytes: backgroundVertexData,
+            length: backgroundVertexData.count * MemoryLayout.size(ofValue: backgroundVertexData[0]),
+            options: []
+        )
+
+        let identityBuffer = device.makeBuffer(
+            bytes: identity,
+            length: identity.count * MemoryLayout.size(ofValue: identity[0]),
+            options: []
+        )
 
         let vertexBuffer = device.makeBuffer(
             bytes: vertexData,
@@ -216,6 +253,11 @@ class ViewController: UIViewController {
         let commandBuffer = commandQueue.makeCommandBuffer()!
         let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor)!
         renderEncoder.setRenderPipelineState(pipelineState)
+        renderEncoder.setVertexBuffer(backgroundVertexBuffer, offset: 0, index: 0)
+        renderEncoder.setFragmentTexture(backgroundTexture, index: 0)
+        renderEncoder.setVertexBuffer(identityBuffer, offset: 0, index: 1)
+        renderEncoder.setVertexBuffer(identityBuffer, offset: 0, index: 2)
+        renderEncoder.drawPrimitives(type: .triangleStrip, vertexStart: 0, vertexCount: 4, instanceCount: 1)
         renderEncoder.setVertexBuffer(vertexBuffer, offset: 0, index: 0)
         renderEncoder.setVertexBuffer(translationBuffer, offset: 0, index: 1)
         renderEncoder.setVertexBuffer(scaleBuffer, offset: 0, index: 2)
