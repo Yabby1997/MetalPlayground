@@ -12,6 +12,7 @@
 		3A28F244C9AF5A05CA4E250E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 85B85BAF9EA3A2CA1BD34015 /* Assets.xcassets */; };
 		5A19B1C47959D8B01CBC4BAF /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F91DBB056BAC58424F5DECCC /* AppDelegate.swift */; };
 		8130020D9CADC57F9BA2D42C /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 330117BF415E9FF47586205F /* LaunchScreen.storyboard */; };
+		CEFF71F12AE90E4700DF2B28 /* Camera.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEFF71F02AE90E4700DF2B28 /* Camera.swift */; };
 		E9C12F72ED381DF5543C922A /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77127638534D998A34DB4D02 /* SceneDelegate.swift */; };
 /* End PBXBuildFile section */
 
@@ -21,6 +22,7 @@
 		77127638534D998A34DB4D02 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
 		85B85BAF9EA3A2CA1BD34015 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		9DB514EB20CCC5C20ABEFDF4 /* Shaders.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Shaders.metal; sourceTree = "<group>"; };
+		CEFF71F02AE90E4700DF2B28 /* Camera.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Camera.swift; sourceTree = "<group>"; };
 		F91DBB056BAC58424F5DECCC /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		FF7C303807222BAFA4299A4F /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -42,6 +44,7 @@
 				330117BF415E9FF47586205F /* LaunchScreen.storyboard */,
 				77127638534D998A34DB4D02 /* SceneDelegate.swift */,
 				9DB514EB20CCC5C20ABEFDF4 /* Shaders.metal */,
+				CEFF71F02AE90E4700DF2B28 /* Camera.swift */,
 				448440F03C8619AD1CD96AC8 /* ViewController.swift */,
 			);
 			path = MetalPlayground;
@@ -123,6 +126,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				5A19B1C47959D8B01CBC4BAF /* AppDelegate.swift in Sources */,
+				CEFF71F12AE90E4700DF2B28 /* Camera.swift in Sources */,
 				E9C12F72ED381DF5543C922A /* SceneDelegate.swift in Sources */,
 				174AB5B8ADDD752BB3D016BC /* Shaders.metal in Sources */,
 				1417D7A45715FCF8F55C4FAA /* ViewController.swift in Sources */,

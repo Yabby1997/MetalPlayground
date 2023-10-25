@@ -14,6 +14,13 @@ class ViewController: UIViewController {
     var pipelineState: MTLRenderPipelineState!
     var commandQueue: MTLCommandQueue!
     var timer: CADisplayLink!
+    var textureLoader: MTKTextureLoader!
+    var textureCache: CVMetalTextureCache!
+    let outputSize = CGSize(width: 720, height: 1280)
+    var outputWidth: Float { Float(outputSize.width) }
+    var outputHeight: Float { Float(outputSize.height) }
+
+    let camera = Camera()
 
     lazy var scaleSlider: UISlider = {
         let slider = UISlider()
@@ -135,13 +142,28 @@ class ViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        camera.setup(with: .hd1280x720)
+
         device = MTLCreateSystemDefaultDevice()
         metalLayer = CAMetalLayer()
         metalLayer.device = device
         metalLayer.pixelFormat = .bgra8Unorm
-        metalLayer.framebufferOnly = true
-        metalLayer.frame = view.frame
+        metalLayer.framebufferOnly = false
+
+        let convertedWidth = (view.frame.height / outputSize.height) * outputSize.width
+        let xOffset = (view.frame.width - convertedWidth) / 2.0
+        metalLayer.frame = CGRect(x: xOffset, y: 0, width: convertedWidth, height: view.frame.height)
+        metalLayer.drawableSize = outputSize
         view.layer.addSublayer(metalLayer)
+
+        textureLoader = MTKTextureLoader(device: device)
+        CVMetalTextureCacheCreate(
+            kCFAllocatorDefault,
+            nil,
+            device,
+            nil,
+            &textureCache
+        )
 
         let defaultLibrary = device.makeDefaultLibrary()!
         let fragmentProgram = defaultLibrary.makeFunction(name: "basic_fragment")
@@ -202,40 +224,41 @@ class ViewController: UIViewController {
     }
 
     func render() {
-        guard let drawable = metalLayer?.nextDrawable() else { return }
+        guard let cameraOutput = camera.pixelBuffer,
+              let drawable = metalLayer?.nextDrawable() else { return }
+
         let renderPassDescriptor = MTLRenderPassDescriptor()
         renderPassDescriptor.colorAttachments[0].texture = drawable.texture
         renderPassDescriptor.colorAttachments[0].loadAction = .clear
         renderPassDescriptor.colorAttachments[0].clearColor = .init(red: 0, green: 0, blue: 0, alpha: 1.0)
 
-        guard let backgroundImage = UIImage(named: "background"),
-              let backgroundCGImage = backgroundImage.cgImage else {
-            fatalError("Failed to get image")
-        }
+        var backgroundCVMetalTexture: CVMetalTexture?
+        CVMetalTextureCacheCreateTextureFromImage(
+            kCFAllocatorDefault,
+            textureCache,
+            cameraOutput,
+            nil,
+            .bgra8Unorm,
+            Int(outputSize.width),
+            Int(outputSize.height),
+            0,
+            &backgroundCVMetalTexture
+        )
 
-        guard let image = UIImage(named: imageName),
-              let cgImage = image.cgImage else {
-            fatalError("Failed to get image")
-        }
-
-        normalizedX = Float(cgImage.width) / Float(metalLayer.drawableSize.width)
-        normalizedY = Float(cgImage.height) / Float(metalLayer.drawableSize.height)
-
-        let textureLoader = MTKTextureLoader(device: device)
-
-        guard let backgroundTexture = try? textureLoader.newTexture(
-            cgImage: backgroundCGImage,
-            options: [.SRGB : false]
-        ) else {
-            fatalError("Failed to create texture from image")
-        }
+        guard let backgroundCVMetalTexture,
+              let backgroundTexture = CVMetalTextureGetTexture(backgroundCVMetalTexture) else { return }
 
         guard let texture = try? textureLoader.newTexture(
-            cgImage: cgImage,
+            name: imageName,
+            scaleFactor: 1.0,
+            bundle: Bundle.main,
             options: [.SRGB : false]
         ) else {
             fatalError("Failed to create texture from image")
         }
+
+        normalizedX = Float(texture.width) / outputWidth
+        normalizedY = Float(texture.height) / outputHeight
 
         let backgroundVertexBuffer = device.makeBuffer(
             bytes: backgroundVertexData,
@@ -267,11 +290,9 @@ class ViewController: UIViewController {
             options: []
         )
 
-        let screenWidth = Float(metalLayer.drawableSize.width)
-        let screenHeight = Float(metalLayer.drawableSize.height)
-        let imageWidth = Float(backgroundCGImage.width)
-        let imageHeight = Float(backgroundCGImage.height)
-        let xInset = (imageWidth - ((imageHeight / screenHeight) * screenWidth)) / (2.0 * imageWidth)
+        let imageWidth = Float(backgroundTexture.width)
+        let imageHeight = Float(backgroundTexture.height)
+        let xInset = (imageWidth - ((imageHeight / outputHeight) * outputWidth)) / (2.0 * imageWidth)
         let backgroundInset: [Float] = [xInset, .zero]
         let backgroundInsetBuffer = device.makeBuffer(
             bytes: backgroundInset,
@@ -319,6 +340,27 @@ class ViewController: UIViewController {
         renderEncoder.endEncoding()
 
         commandBuffer.present(drawable)
+        commandBuffer.addCompletedHandler { _ in
+            let texture = drawable.texture
+            var pixelBuffer: CVPixelBuffer?
+            guard CVPixelBufferCreate(
+                kCFAllocatorDefault,
+                texture.width,
+                texture.height,
+                kCVPixelFormatType_32BGRA,
+                nil,
+                &pixelBuffer
+            )  == kCVReturnSuccess,
+                  let buffer = pixelBuffer else {
+                fatalError("Error: Could not create pixel buffer")
+            }
+
+            CVPixelBufferLockBaseAddress(buffer, [])
+            let pixelData = CVPixelBufferGetBaseAddress(buffer)
+            let region = MTLRegionMake2D(0, 0, texture.width, texture.height)
+            texture.getBytes(pixelData!, bytesPerRow: CVPixelBufferGetBytesPerRow(buffer), from: region, mipmapLevel: 0)
+            CVPixelBufferUnlockBaseAddress(buffer, [])
+        }
         commandBuffer.commit()
     }
 
