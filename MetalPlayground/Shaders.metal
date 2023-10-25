@@ -28,5 +28,11 @@ vertex VertexOut basic_vertex(const device float4* verticies [[ buffer(0) ]],
 fragment half4 basic_fragment(VertexOut vertexOut [[ stage_in ]],
                               texture2d<half> texture [[ texture(0) ]]) {
     sampler texture_sampler(mip_filter::linear, mag_filter::linear, min_filter::linear);
+
+    if (vertexOut.texturePosition.x < 0.0 || vertexOut.texturePosition.x > 1.0 ||
+        vertexOut.texturePosition.y < 0.0 || vertexOut.texturePosition.y > 1.0) {
+        return half4(0.0);
+    }
+
     return texture.sample(texture_sampler, vertexOut.texturePosition);
 }
