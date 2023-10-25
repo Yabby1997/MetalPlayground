@@ -17,11 +17,12 @@ vertex VertexOut basic_vertex(const device float4* verticies [[ buffer(0) ]],
                               constant float4x4& translation [[ buffer(1) ]],
                               constant float4x4& scale [[ buffer(2) ]],
                               constant float2& textureInset [[ buffer(3) ]],
+                              constant bool& flipEncoding [[ buffer(4) ]],
                               uint vertexIndex [[ vertex_id ]]) {
     VertexOut out;
     out.position = translation * scale * verticies[vertexIndex];
-    out.texturePosition = float2((vertexIndex % 2) + (vertexIndex % 2 == 0 ? textureInset[0] : -textureInset[0]),
-                                 (vertexIndex / 2) + (vertexIndex / 2 == 0 ? textureInset[1] : -textureInset[1]));
+    out.texturePosition = float2(((vertexIndex + (flipEncoding ? 1 : 0)) % 2) + ((vertexIndex + (flipEncoding ? 1 : 0)) % 2 == 0 ? textureInset[0] : -textureInset[0]),
+                                 (vertexIndex / 2 + (vertexIndex / 2 == 0 ? textureInset[1] : -textureInset[1])));
     return out;
 }
 

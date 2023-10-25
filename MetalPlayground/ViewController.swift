@@ -69,6 +69,14 @@ class ViewController: UIViewController {
         return segmentedControl
     }()
 
+    lazy var flipper: UISwitch = {
+        let flipper = UISwitch()
+        flipper.isOn = false
+        flipper.addTarget(self, action: #selector(didToggleFlipper), for: .valueChanged)
+        flipper.translatesAutoresizingMaskIntoConstraints = false
+        return flipper
+    }()
+
     var backgroundVertexData: [Float] {
         [
             -1.0, 1.0, 0.0, 1.0,
@@ -77,6 +85,8 @@ class ViewController: UIViewController {
              1.0, -1.0, 0.0, 1.0
          ]
     }
+
+    var isBackgroundFlipped = false
 
     var identity: [Float] {
         [
@@ -183,6 +193,12 @@ class ViewController: UIViewController {
             imageSelector.topAnchor.constraint(equalTo: zTranslationSlider.topAnchor, constant: 30.0),
             imageSelector.centerXAnchor.constraint(equalTo: view.centerXAnchor)
         ])
+
+        view.addSubview(flipper)
+        NSLayoutConstraint.activate([
+            flipper.topAnchor.constraint(equalTo: imageSelector.topAnchor, constant: 60.0),
+            flipper.centerXAnchor.constraint(equalTo: view.centerXAnchor)
+        ])
     }
 
     func render() {
@@ -190,6 +206,7 @@ class ViewController: UIViewController {
         let renderPassDescriptor = MTLRenderPassDescriptor()
         renderPassDescriptor.colorAttachments[0].texture = drawable.texture
         renderPassDescriptor.colorAttachments[0].loadAction = .clear
+        renderPassDescriptor.colorAttachments[0].clearColor = .init(red: 0, green: 0, blue: 0, alpha: 1.0)
 
         guard let backgroundImage = UIImage(named: "background"),
               let backgroundCGImage = backgroundImage.cgImage else {
@@ -269,6 +286,19 @@ class ViewController: UIViewController {
             options: []
         )
 
+        let backgroundFlipBuffer = device.makeBuffer(
+            bytes: &isBackgroundFlipped,
+            length: MemoryLayout.size(ofValue: isBackgroundFlipped),
+            options: []
+        )
+
+        var notFlipped = false
+        let noFlipBuffer = device.makeBuffer(
+            bytes: &notFlipped,
+            length: MemoryLayout.size(ofValue: notFlipped),
+            options: []
+        )
+
         let commandBuffer = commandQueue.makeCommandBuffer()!
         let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor)!
         renderEncoder.setRenderPipelineState(pipelineState)
@@ -277,11 +307,13 @@ class ViewController: UIViewController {
         renderEncoder.setVertexBuffer(identityBuffer, offset: 0, index: 1)
         renderEncoder.setVertexBuffer(identityBuffer, offset: 0, index: 2)
         renderEncoder.setVertexBuffer(backgroundInsetBuffer, offset: 0, index: 3)
+        renderEncoder.setVertexBuffer(backgroundFlipBuffer, offset: 0, index: 4)
         renderEncoder.drawPrimitives(type: .triangleStrip, vertexStart: 0, vertexCount: 4, instanceCount: 1)
         renderEncoder.setVertexBuffer(vertexBuffer, offset: 0, index: 0)
         renderEncoder.setVertexBuffer(translationBuffer, offset: 0, index: 1)
         renderEncoder.setVertexBuffer(scaleBuffer, offset: 0, index: 2)
         renderEncoder.setVertexBuffer(zeroInsetBuffer, offset: 0, index: 3)
+        renderEncoder.setVertexBuffer(noFlipBuffer, offset: 0, index: 4)
         renderEncoder.setFragmentTexture(texture, index: 0)
         renderEncoder.drawPrimitives(type: .triangleStrip, vertexStart: 0, vertexCount: 4, instanceCount: 1)
         renderEncoder.endEncoding()
@@ -310,5 +342,9 @@ class ViewController: UIViewController {
 
     @objc func didChangeZtranslationValue(_ sender: UISlider) {
         zTranslation = sender.value
+    }
+
+    @objc func didToggleFlipper(_ sender: UISwitch) {
+        isBackgroundFlipped = sender.isOn
     }
 }
